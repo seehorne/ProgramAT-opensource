@@ -62,19 +62,19 @@ This issue should clearly describe what you propose (e.g. feature and proposed i
 
 Community members can then react to the issue, giving a thumbs up react to indicate they would like to see this change and a thumbs down react to indicate that they do not want to see this change.
 Once the issue has recieved an aggregate of positive three thumbs up (i.e. at least three more thumbs up than thumbs down), **and** a comment from a maintainer indicating the change is given the go-ahead upon reaching three votes, it is eligible for a pull request.
-A list of research team members who are qualified to leave such a comment can be found here: (TODO: make list of who is a maintainer and link it)
+A list of research team members who are qualified to leave such a comment can be found [here.](https://github.com/program-at/ProgramAT-opensource/blob/Contribution-Guidelines/MAINTAINERS.md) 
 Contributors' reactions to their own issues will not count towards the total of net three positive reactions.
 
-Alternatively, if a maintainer leaves a comment explicitly specifying approval to move on to the pull request stage, the issue is considered approved, even if it has not recieved the requisite number of positive reactions.
+Alternatively, if a [maintainer](https://github.com/program-at/ProgramAT-opensource/blob/Contribution-Guidelines/MAINTAINERS.md) leaves a comment explicitly specifying approval to move on to the pull request stage, the issue is considered approved, even if it has not recieved the requisite number of positive reactions.
 
 Once approval criteria has been met, you can submit an upstream pull request containing your proposed change. 
 Please include a link to your approved issue in this pull request. Pull requests of the core code base contribution type without a linked issue will not be eligible for merging upstream.
 In this pull request, you should detail how your submitted code changes address the plans laid out in your approved issue.
 For fastest approval, this description should include not just what you changed, but the line numbers, file names, and function names where appropriate for the associated changes.
-To be approved for merging upstream, the pull request needs to achieve at least three approving reviews, including at least one from a maintainer.
+To be approved for merging upstream, the pull request needs to achieve at least three approving reviews, including at least one from a [maintainer](https://github.com/program-at/ProgramAT-opensource/blob/Contribution-Guidelines/MAINTAINERS.md).
 Contributors are not eligible to be a reviewer on their own pull request.
 
-You may recieve a review that requests additional changes: if you recieve such a review from a maintainer, you must make these changes regardless of outside number of acceptances before merging, and recieve an approving review from the same maintainer before proceeding to merge.
+You may recieve a review that requests additional changes: if you recieve such a review from a [maintainer](https://github.com/program-at/ProgramAT-opensource/blob/Contribution-Guidelines/MAINTAINERS.md), you must make these changes regardless of outside number of acceptances before merging, and recieve an approving review from the same maintainer before proceeding to merge.
 You do not, however, need to regain approval of the issue, nor start from scratch in terms of number of prior approvals after submitting the required changes.
 
 After meeting these criteria, the contribution is eligible to be merged upstream.
@@ -97,7 +97,7 @@ To be approved for merging upstream, the pull request needs to achieve at least 
 Contributors are not eligible to be a reviewer on their own pull request.
 
 For this contribution type, a review from a maintainer is not strictly required, though it still may occur. 
-In this vein, you may recieve a review that requests additional changes: if you recieve such a review from a maintainer, you must make these changes regardless of outside number of acceptances before merging, and recieve an approving review from the same research team member before proceeding to merge.
+In this vein, you may recieve a review that requests additional changes: if you recieve such a review from a [maintainer](https://github.com/program-at/ProgramAT-opensource/blob/Contribution-Guidelines/MAINTAINERS.md), you must make these changes regardless of outside number of acceptances before merging, and recieve an approving review from the same maintainer before proceeding to merge.
 You do not, however, start from scratch in terms of number of prior approvals after submitting the required changes.
 
 Once you have achieved three approvals, without any unresolved requested changes from maintainers, your documentation contribution is eligible to be merged upstream.
