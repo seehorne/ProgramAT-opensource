@@ -29,7 +29,16 @@ Since tools on main influence the development and behavior of other tools that c
 To ensure this, we require 3 members of the community (other than the contributor themselves) to verify the tool works as it says it does.
 
 This process starts by submitting a pull request containing your tool. Please give this pull request a name that reflects your tool's functionality. 
-Once you have done so, the pull request is visible in non-production modes on the main server.
+Further, the pull request description should include, at a minimum:
+1. What does this tool do?
+2. What mode or modes do you anticipate the tool will run in?
+3. What has your own testing process been so far?
+4. What eronious behavior, if any, is expected from the tool?
+5. Why are you merging this tool?
+
+Contributors may optionally include additional information they feel is relevant.
+
+Once you have made such a pull request, the pull request is visible in non-production modes on the main server.
 
 Tools can be reviewed by switching to "review mode" in the app, which connects you to the main server, where you can see all tools with associated pull requests.
 Review mode is basically the same as dev mode, except you cannot create or iterate on tools directly there. 
