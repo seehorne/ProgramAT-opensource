@@ -7,10 +7,10 @@ Further description of each contribution class can be found in the sections desc
 2. Core codebase: these are contributions that modify the code for the server or mobile app itself.
 3. Documentation: these are contributions that add or modify documentation, which could coorespond to either of the above contributions or be present on its own.
 
-Each type of contribution has slightly different criteria for being accepted, detailed in their relevant sections below.
+Each type of contribution has different criteria for being accepted, detailed in their relevant sections.
 
 When making a contribution, potential contributors will be asked to mark the type of contribution their PR makes (this can involve selecting multiple categories if appropriate).
-Contributions will be eligible to be accepted only once the approval criteria for all encompassed categories has been met.
+Contributions will be eligible to be merged upstream only once the approval criteria for all encompassed categories has been met.
 
 Further, regardless of the contribution type, first-time contributors must sign the code of conduct. 
 This can be done by checking the box in the PR template indicating you have read and agreed to the code of conduct. 
