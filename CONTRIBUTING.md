@@ -78,7 +78,7 @@ Documentation is a very important part of the health of any codebase.
 You may want to make a contribution adding new documentation when submitting a contribution about the core code base or a new visual assistive tool, to make sure it is appropriately understood.
 You may also want to make a contribution adding new documentation outside of submitting new code if you notice an area where documentation is absent or underspecified.
 You may want to make a contribution updating existing documentation as well: for instance, if you notice existing documentation has become out of date, a documentation contribution empowers you to update it.
-Similarly, if you notice conflicts within existing documentation, a documentation contribution is the appropriate for resolving the conflict.
+Similarly, if you notice conflicts within existing documentation, a documentation contribution is the appropriate way to resolve the conflict.
 
 ### What needs to happen for this contribution to be approved
 To make a documentation contribution, you should submit a pull request containing the changed documentation, and assign the pull request the documentation label.
