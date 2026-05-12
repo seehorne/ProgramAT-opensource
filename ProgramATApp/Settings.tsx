@@ -96,7 +96,6 @@ export default function Settings({ appMode, onModeChange }: SettingsProps) {
     );
   };
 
-  useEffect(() => {
   const handleModeSwitch = () => {
     const newMode: AppMode = appMode === 'development' ? 'production' : 'development';
     
