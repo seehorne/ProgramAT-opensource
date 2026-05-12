@@ -11,6 +11,7 @@ import TextInput from './TextInput';
 import ViewLogsScreen from './ViewLogsScreen';
 import BeepService from './BeepService';
 import { AppMode } from './config';
+import ReviewPane from './ReviewPane';
 
 interface PRsAndTextProps {
   serverFeedback?: string;
@@ -122,8 +123,11 @@ export default function PRsAndText({
           onClearData={onClearCopilotData}
         />
       ) : viewMode === 'review' && viewLogsPR ? (
-        // Phase 3.3: review pane — placeholder until ReviewPane component is built
-        null
+        <ReviewPane
+          prNumber={viewLogsPR.number}
+          prTitle={viewLogsPR.title}
+          onBack={handleBackToPRs}
+        />
       ) : appMode !== 'review' ? (
         <TextInput 
           serverFeedback={serverFeedback}

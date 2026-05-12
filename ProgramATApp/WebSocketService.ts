@@ -867,6 +867,33 @@ class WebSocketService {
       return false;
     }
   }
+
+  /**
+   * Submit a review on a PR (approve or request changes)
+   */
+  submitToolReview(prNumber: number, approved: boolean, comment: string): boolean {
+    if (!this.isConnected()) {
+      console.warn('Cannot submit review: WebSocket not connected');
+      return false;
+    }
+
+    try {
+      const message = {
+        type: 'submit_tool_review',
+        pr_number: prNumber,
+        approved,
+        comment,
+        timestamp: Date.now(),
+      };
+
+      this.ws!.send(JSON.stringify(message));
+      console.log(`Submitting review for PR #${prNumber}: approved=${approved}`);
+      return true;
+    } catch (error) {
+      console.error('Failed to submit review:', error);
+      return false;
+    }
+  }
 }
 
 // Export singleton instance
