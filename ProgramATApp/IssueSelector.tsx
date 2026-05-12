@@ -50,6 +50,7 @@ interface IssueSelectorProps {
   prs?: PR[];
   embedded?: boolean;
   selectedIssue?: {number: number; title: string} | null; // Currently selected PR
+  reviewMode?: boolean; // Hides create/update/logs options, only shows Open Tools
 }
 
 export default function IssueSelector({ 
@@ -63,7 +64,8 @@ export default function IssueSelector({
   issues = [], // Default to empty array
   prs = [],
   embedded = false,
-  selectedIssue = null
+  selectedIssue = null,
+  reviewMode = false
 }: IssueSelectorProps) {
   const { theme } = useTheme();
   const [loading, setLoading] = useState(false);
@@ -166,7 +168,28 @@ export default function IssueSelector({
 
   const handlePRPress = (pr: PR) => {
     console.log('[IssueSelector] PR selected:', pr.number, pr.title);
-    
+
+    const openTools = () => {
+      WebSocketService.sendIssueSelection('update', pr.number, pr.title);
+      WebSocketService.requestPRTools(pr.number);
+      const prAsIssue: Issue = {
+        number: pr.number,
+        title: pr.title,
+        labels: [],
+        created_at: pr.created_at,
+        updated_at: pr.updated_at
+      };
+      onIssueSelect(prAsIssue);
+      onClose();
+      if (onNavigateToTools) onNavigateToTools();
+    };
+
+    // In review mode: immediately open tools without showing the action sheet
+    if (reviewMode) {
+      openTools();
+      return;
+    }
+
     // Show native alert dialog for better accessibility
     Alert.alert(
       `PR #${pr.number}: ${pr.title}\n\nWhat would you like to do?`,
@@ -176,30 +199,7 @@ export default function IssueSelector({
           text: 'Open Tools',
           onPress: () => {
             console.log('[IssueSelector] Opening tools for PR:', pr.number);
-            
-            // Send mode selection to backend and request tools
-            WebSocketService.sendIssueSelection('update', pr.number, pr.title);
-            WebSocketService.requestPRTools(pr.number);
-            
-            // Convert PR to Issue format
-            const prAsIssue: Issue = {
-              number: pr.number,
-              title: pr.title,
-              labels: [],
-              created_at: pr.created_at,
-              updated_at: pr.updated_at
-            };
-            
-            // Select the PR
-            onIssueSelect(prAsIssue);
-            
-            // Close selector
-            onClose();
-            
-            // Navigate to Tools tab
-            if (onNavigateToTools) {
-              onNavigateToTools();
-            }
+            openTools();
           }
         },
         {
@@ -417,6 +417,7 @@ export default function IssueSelector({
         <View 
           style={[styles.footer, { backgroundColor: theme.background, borderTopColor: theme.border }]}
           accessible={false}>
+          {!reviewMode && (
           <TouchableOpacity
             style={[styles.createNewButton, { backgroundColor: theme.success }]}
             onPress={() => {
@@ -436,6 +437,7 @@ export default function IssueSelector({
               Create New Issue Instead
             </Text>
           </TouchableOpacity>
+          )}
         </View>
       </SafeAreaView>
     );

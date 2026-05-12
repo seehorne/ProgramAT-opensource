@@ -10,6 +10,7 @@ import IssueSelector from './IssueSelector';
 import TextInput from './TextInput';
 import ViewLogsScreen from './ViewLogsScreen';
 import BeepService from './BeepService';
+import { AppMode } from './config';
 
 interface PRsAndTextProps {
   serverFeedback?: string;
@@ -23,6 +24,7 @@ interface PRsAndTextProps {
   copilotSummaries?: any[];
   copilotLogs?: any[];
   onClearCopilotData?: () => void; // Callback to clear copilot data when switching PRs
+  appMode?: AppMode;
 }
 
 type ViewMode = 'text-input' | 'pr-list' | 'view-logs';
@@ -38,7 +40,8 @@ export default function PRsAndText({
   copilotSessions = [],
   copilotSummaries = [],
   copilotLogs = [],
-  onClearCopilotData = () => {}
+  onClearCopilotData = () => {},
+  appMode = 'development'
 }: PRsAndTextProps) {
   const { theme } = useTheme();
   // Start with PR list view
@@ -57,7 +60,12 @@ export default function PRsAndText({
 
   const handleIssueSelect = (issue: {number: number; title: string}) => {
     onIssueSelect(issue);
-    setViewMode('text-input'); // Navigate to text input after selecting PR
+    if (appMode === 'review') {
+      // In review mode, IssueSelector already navigates to tools directly
+      // Nothing more to do here
+    } else {
+      setViewMode('text-input'); // Navigate to text input after selecting PR
+    }
   };
 
   const handleCreateNew = () => {
@@ -98,8 +106,9 @@ export default function PRsAndText({
           prs={prList}
           embedded={true}
           selectedIssue={selectedIssue}
+          reviewMode={appMode === 'review'}
         />
-      ) : viewMode === 'view-logs' && viewLogsPR ? (
+      ) : viewMode === 'view-logs' && viewLogsPR && appMode !== 'review' ? (
         <ViewLogsScreen
           prNumber={viewLogsPR.number}
           prTitle={viewLogsPR.title}
@@ -109,7 +118,7 @@ export default function PRsAndText({
           logs={copilotLogs}
           onClearData={onClearCopilotData}
         />
-      ) : (
+      ) : appMode !== 'review' ? (
         <TextInput 
           serverFeedback={serverFeedback}
           selectedIssue={selectedIssue}
@@ -117,7 +126,7 @@ export default function PRsAndText({
           onBack={handleBackToPRs}
           showBackButton={true}
         />
-      )}
+      ) : null}
     </View>
   );
 }

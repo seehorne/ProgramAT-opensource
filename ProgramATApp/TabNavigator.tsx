@@ -100,6 +100,7 @@ export default function TabNavigator({
             copilotSummaries={copilotSummaries}
             copilotLogs={copilotLogs}
             onClearCopilotData={onClearCopilotData}
+            appMode={appMode}
           />
         );
       case 'tools':
@@ -132,6 +133,7 @@ export default function TabNavigator({
               copilotSummaries={copilotSummaries}
               copilotLogs={copilotLogs}
               onClearCopilotData={onClearCopilotData}
+              appMode={appMode}
             />
           : <ToolsAndRunner issueTools={issueTools} productionMode={true} isActive={true} selectedIssue={selectedIssue} onNavigateToChat={(conversationId) => {
               setPendingConversationId(conversationId || null);
