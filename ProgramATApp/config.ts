@@ -43,7 +43,7 @@ export const Config = {
 
   // GitHub repo for the general/review server (owner/repo format).
   // Used in review mode so the user's server can post approve/reject to the correct repo.
-  REVIEW_GITHUB_REPO: 'program-at/ProgramAT-opensource',
+  REVIEW_GITHUB_REPO: 'program-at/ProgramAT',
   
   // GitHub branch configuration
   // In production mode, tools are fetched from this branch only

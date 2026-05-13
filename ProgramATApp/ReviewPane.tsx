@@ -39,6 +39,16 @@ export default function ReviewPane({ prNumber, prTitle, onBack }: ReviewPaneProp
       return;
     }
 
+    // In review mode, approval goes through the user's primary server (for GitHub identity).
+    // Fail fast if it's not connected rather than waiting for the 15s timeout.
+    if (!WebSocketService.isConnected()) {
+      Alert.alert(
+        'Not Connected',
+        'Your personal server is not connected. Please go to Settings and connect to your server — it\'s needed to submit reviews with your GitHub identity.'
+      );
+      return;
+    }
+
     Alert.alert(
       `Confirm Review`,
       `Submit a ${verdict === 'approve' ? '✅ Approval' : '❌ Request Changes'} for PR #${prNumber}?`,
