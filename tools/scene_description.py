@@ -21,18 +21,21 @@ import cv2
 import numpy as np
 from typing import Dict, Optional, Any
 import os
+import base64
+import io
 from PIL import Image
 import re
 
-# Constants
-GEMINI_CONFIDENCE_SCORE = 0.9  # Gemini provides high-quality results
-
 try:
-    import google.generativeai as genai
-    GEMINI_AVAILABLE = True
+    import litellm
+    LITELLM_AVAILABLE = True
 except ImportError:
-    GEMINI_AVAILABLE = False
-    print("⚠️  google-generativeai not installed. Install with: pip install google-generativeai")
+    litellm = None
+    LITELLM_AVAILABLE = False
+    print("⚠️  litellm not installed. Install with: pip install litellm")
+
+# Constants
+GEMINI_CONFIDENCE_SCORE = 0.9
 
 
 def get_scene_context(image: np.ndarray) -> Dict[str, Any]:
@@ -156,6 +159,53 @@ def convert_cv2_to_pil(image: np.ndarray) -> Image.Image:
     pil_image = Image.fromarray(image_rgb)
     
     return pil_image
+
+
+def _image_to_data_uri(pil_image: Image.Image) -> str:
+    """Convert a PIL image to a base64 data URI for LiteLLM vision calls."""
+    buffer = io.BytesIO()
+    pil_image.save(buffer, format='JPEG', quality=85)
+    image_base64 = base64.b64encode(buffer.getvalue()).decode('ascii')
+    return f'data:image/jpeg;base64,{image_base64}'
+
+
+def _resolve_model_name(model_name: str) -> str:
+    if not model_name:
+        return 'gemini/gemini-3-flash-preview'
+    if '/' in model_name:
+        return model_name
+    if model_name.startswith('gemini'):
+        return f'gemini/{model_name}'
+    return model_name
+
+
+def _resolve_api_key(model_name: str, explicit_api_key: Optional[str] = None) -> str:
+    if explicit_api_key:
+        return explicit_api_key
+
+    normalized = (model_name or '').lower()
+    if normalized.startswith('gemini'):
+        return os.environ.get('GEMINI_API_KEY', '')
+    if normalized.startswith('claude'):
+        return os.environ.get('ANTHROPIC_API_KEY', '')
+    return os.environ.get('OPENAI_API_KEY', '') or os.environ.get('GEMINI_API_KEY', '')
+
+
+def _extract_text(response) -> str:
+    content = response.choices[0].message.content
+    if isinstance(content, str):
+        return content.strip()
+    if isinstance(content, list):
+        parts = []
+        for part in content:
+            if isinstance(part, str):
+                parts.append(part)
+            elif isinstance(part, dict):
+                parts.append(part.get('text', ''))
+            elif hasattr(part, 'text'):
+                parts.append(getattr(part, 'text', '') or '')
+        return ''.join(parts).strip()
+    return str(content).strip()
 
 
 def build_scene_prompt(
@@ -289,23 +339,22 @@ def analyze_scene(
             'context': dict
         }
     """
-    if not GEMINI_AVAILABLE:
+    if not LITELLM_AVAILABLE:
         return {
             'success': False,
-            'description': 'Gemini API not available. Please install google-generativeai package.',
+            'description': 'LiteLLM not available. Please install litellm package.',
             'confidence': 0.0,
             'detail_level': detail_level,
             'focus': focus
         }
     
     # Get API key
-    if api_key is None:
-        api_key = os.environ.get('GEMINI_API_KEY', '')
+    api_key = _resolve_api_key(model_name, api_key)
     
     if not api_key:
         return {
             'success': False,
-            'description': 'Gemini API key not configured. Please set GEMINI_API_KEY environment variable.',
+            'description': 'API key not configured. Please set the matching provider key in the environment.',
             'confidence': 0.0,
             'detail_level': detail_level,
             'focus': focus
@@ -320,22 +369,32 @@ def analyze_scene(
         
         # Convert to PIL format
         pil_image = convert_cv2_to_pil(processed_image)
+        image_data_uri = _image_to_data_uri(pil_image)
         
         # Build prompt
         prompt = build_scene_prompt(detail_level, focus, context)
-        
-        # Configure Gemini
-        genai.configure(api_key=api_key)
-        
-        print(f"🤖 Using Gemini model: {model_name}")
+
+        model_name = _resolve_model_name(model_name)
+
+        print(f"🤖 Using LiteLLM model: {model_name}")
         print(f"📋 Detail level: {detail_level}, Focus: {focus}")
         
-        # Create model and generate description
-        model = genai.GenerativeModel(model_name)
-        response = model.generate_content([prompt, pil_image])
+        response = litellm.completion(
+            model=model_name,
+            messages=[
+                {
+                    'role': 'user',
+                    'content': [
+                        {'type': 'text', 'text': prompt},
+                        {'type': 'image_url', 'image_url': {'url': image_data_uri}},
+                    ],
+                }
+            ],
+            api_key=api_key,
+        )
         
         # Extract description
-        description = response.text.strip()
+        description = _extract_text(response)
         
         print(f"\n📋 Scene Description:\n{description}\n")
         
@@ -419,7 +478,7 @@ def main(image: np.ndarray, input_data: Optional[Dict] = None) -> Dict[str, Any]
     focus = input_data.get('focus', 'general')
     style = input_data.get('style', 'narrative')
     api_key = input_data.get('api_key')
-    model = input_data.get('model', 'gemini-3-flash-preview')
+    model = input_data.get('model', os.environ.get('LLM_MODEL', os.environ.get('GEMINI_MODEL', 'gemini-3-flash-preview')))
     
     # Analyze scene
     result = analyze_scene(

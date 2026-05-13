@@ -13,6 +13,7 @@ import asyncio
 import websockets
 import json
 import base64
+import io
 import logging
 from datetime import datetime
 from pathlib import Path
@@ -23,7 +24,13 @@ from google.cloud import secretmanager
 from github import Github
 import os
 from dotenv import load_dotenv
-import google.generativeai as genai
+try:
+    import litellm
+    LITELLM_AVAILABLE = True
+except ImportError:
+    litellm = None
+    LITELLM_AVAILABLE = False
+from litellm_utils import resolve_model_name, resolve_api_key, extract_text, pil_image_to_data_uri
 from module_manager import get_module_manager
 import copilot_db
 from gemini_summarizer import summarize_entries_sync
@@ -287,13 +294,10 @@ GITHUB_TOKEN = _fetch_github_token()
 GITHUB_REPO = os.environ.get('GITHUB_REPO', '')  # Format: owner/repo
 PAUSE_DURATION = float(os.environ.get('PAUSE_DURATION', '5.0'))  # seconds to wait before creating issue
 
-# Gemini Configuration
+# LiteLLM / Gemini Configuration
 GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY', '')
-GEMINI_MODEL = os.environ.get('GEMINI_MODEL', 'gemini-3-flash-preview')
-
-# Configure Gemini if API key is available
-if GEMINI_API_KEY:
-    genai.configure(api_key=GEMINI_API_KEY)
+LLM_MODEL = os.environ.get('LLM_MODEL', os.environ.get('GEMINI_MODEL', 'gemini-3-flash-preview'))
+GEMINI_MODEL = LLM_MODEL
 
 # Gemini Live manager for custom-GPT streaming mode
 gemini_live_manager = GeminiLiveManager(GEMINI_API_KEY) if GEMINI_API_KEY else None
@@ -1826,29 +1830,32 @@ def fetch_open_prs():
         
         # Fetch open PRs (limit to 30 most recent)
         pulls = repo.get_pulls(state='open', sort='updated', direction='desc')
-        
+
         pr_list = []
-        for pr in pulls[:30]:  # Limit to 30 PRs
+        import re
+        # Iterate safely over the PaginatedList instead of slicing it
+        for i, pr in enumerate(pulls):
+            if i >= 30:
+                break
             # Extract mentioned issue numbers from PR text
-            import re
             pr_text = f"{pr.title} {pr.body or ''}"
             mentioned_issues = re.findall(r'#(\d+)', pr_text)
-            
+
             pr_list.append({
                 'number': pr.number,
                 'title': pr.title,
-                'branch': pr.head.ref,
+                'branch': getattr(pr.head, 'ref', '') or '',
                 'state': pr.state,
                 'mentioned_issues': mentioned_issues,
-                'created_at': pr.created_at.isoformat(),
-                'updated_at': pr.updated_at.isoformat()
+                'created_at': pr.created_at.isoformat() if getattr(pr, 'created_at', None) else None,
+                'updated_at': pr.updated_at.isoformat() if getattr(pr, 'updated_at', None) else None
             })
         
         logger.info(f"Fetched {len(pr_list)} open PRs from GitHub")
         return pr_list
         
     except Exception as e:
-        logger.error(f"Failed to fetch PRs: {e}")
+        logger.exception("Failed to fetch PRs")
         return []
 
 
@@ -2704,12 +2711,14 @@ def parse_issue_selection(transcript: str, available_issues: list) -> dict:
     Returns:
         Dictionary with 'mode' ('create' or 'update'), 'issue_number', and 'issue_title'
     """
-    if not GEMINI_API_KEY or not available_issues:
+    if not available_issues:
+        return {'mode': 'create', 'issue_number': None, 'issue_title': None}
+
+    if not LITELLM_AVAILABLE:
+        logger.warning("LiteLLM not available, using simple issue selection fallback")
         return {'mode': 'create', 'issue_number': None, 'issue_title': None}
     
     try:
-        model = genai.GenerativeModel(GEMINI_MODEL)
-        
         # Build list of available issues for the prompt
         issue_list_str = "\n".join([f"- Issue #{issue['number']}: {issue['title']}" 
                                      for issue in available_issues])
@@ -2743,8 +2752,12 @@ Return ONLY a valid JSON object:
   "confidence": <0.0 to 1.0>
 }}"""
 
-        response = model.generate_content(prompt)
-        ai_response = response.text.strip()
+        response = litellm.completion(
+            model=resolve_model_name(GEMINI_MODEL, default_model='gemini-3-flash-preview'),
+            messages=[{'role': 'user', 'content': prompt}],
+            api_key=resolve_api_key(GEMINI_MODEL, GEMINI_API_KEY),
+        )
+        ai_response = extract_text(response)
         
         # Remove markdown code blocks if present
         if ai_response.startswith('```json'):
@@ -2917,8 +2930,8 @@ def parse_transcript_with_ai(transcript: str, existing_data: dict = None) -> dic
     Returns:
         Dictionary with parsed fields including 'missing_fields' list
     """
-    if not GEMINI_API_KEY:
-        logger.warning("Gemini API key not configured, using simple parsing")
+    if not LITELLM_AVAILABLE:
+        logger.warning("LiteLLM not available, using simple parsing")
         existing_prompts = existing_data.get('original_prompts', []) if existing_data else []
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M")
         return {
@@ -2938,8 +2951,6 @@ def parse_transcript_with_ai(transcript: str, existing_data: dict = None) -> dic
         }
     
     try:
-        model = genai.GenerativeModel(GEMINI_MODEL)
-        
         # Build context from existing data if this is a follow-up
         context_info = ""
         if existing_data:
@@ -3012,10 +3023,14 @@ Return format:
   "missing_fields": ["field1", "field2"]  // Only truly missing/empty important fields. Use [] if all important fields have content.
 }}"""
 
-        response = model.generate_content(prompt)
+        response = litellm.completion(
+            model=resolve_model_name(GEMINI_MODEL, default_model='gemini-3-flash-preview'),
+            messages=[{'role': 'user', 'content': prompt}],
+            api_key=resolve_api_key(GEMINI_MODEL, GEMINI_API_KEY),
+        )
         
         # Parse the AI response
-        ai_response = response.text.strip()
+        ai_response = extract_text(response)
         
         # Remove markdown code blocks if present
         if ai_response.startswith('```json'):
@@ -4814,14 +4829,25 @@ async def handle_client(websocket):
                             # Create prompt for follow-up question
                             prompt = f"You are analyzing this image. The user is asking a follow-up question: {question}\n\nPlease provide a helpful and concise answer based on what you can see in the image."
                             
-                            # Send to Gemini using gemini-2.5-flash
+                            # Send the follow-up through LiteLLM using the configured Gemini model
                             try:
-                                model = genai.GenerativeModel('gemini-2.5-flash')
-                                response = model.generate_content([prompt, pil_image])
-                                answer = response.text.strip()
+                                response = litellm.completion(
+                                    model=resolve_model_name('gemini-2.5-flash', default_model='gemini-2.5-flash'),
+                                    messages=[
+                                        {
+                                            'role': 'user',
+                                            'content': [
+                                                {'type': 'text', 'text': prompt},
+                                                {'type': 'image_url', 'image_url': {'url': pil_image_to_data_uri(pil_image)}},
+                                            ],
+                                        }
+                                    ],
+                                    api_key=resolve_api_key('gemini-2.5-flash', GEMINI_API_KEY),
+                                )
+                                answer = extract_text(response)
                                 
                                 logger.info(f"FOLLOW-UP: Generated answer length: {len(answer)}")
-                                logger.info(f"FOLLOW-UP: Successfully used gemini-2.5-flash for image+text")
+                                logger.info(f"FOLLOW-UP: Successfully used LiteLLM with gemini-2.5-flash for image+text")
                                 
                                 await websocket.send(json.dumps({
                                     'type': 'follow_up_response',
@@ -4831,7 +4857,7 @@ async def handle_client(websocket):
                                 }))
                                 
                             except Exception as e:
-                                logger.error(f"Error getting Gemini response for follow-up: {e}")
+                                logger.error(f"Error getting LiteLLM response for follow-up: {e}")
                                 await websocket.send(json.dumps({
                                     'type': 'follow_up_response',
                                     'status': 'error',
