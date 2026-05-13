@@ -149,8 +149,13 @@ Security notes:
 - Restrict the service account to only the Vision API and grant the minimal needed permissions.
 
 ### Running the Application
+You can host the server from your personal machine for free, or use a hosting service like a GCP virtual machine or AWS virtual machine, which may have associated costs. 
 
-You can skip to step 3 if ngrok is already installed and configured.
+The difference between these two options, aside from cost, is that when running from your personal machine, your server will shut off whenever your machine does. This is potentially avoidable by using a paid hosting service.
+
+We provide instructions here for hosting from your personal machine. If you would prefer to use a paid hosting service, follow the instructions there for setup.
+
+You can skip to step 3 if ngrok is already installed and configured, or if you are using a paid hosting service.
 
 1. **Install ngrok**
    Download ngrok for your system from <https://ngrok.com/download> and make sure `ngrok version` works in your terminal.
@@ -172,13 +177,15 @@ You can skip to step 3 if ngrok is already installed and configured.
 
    The server listens on `0.0.0.0:8080` by default.
 
-4. **Start the ngrok tunnel**
-
+4. **Start the ngrok tunnel (only if hosting from your personal machine)**
    ```bash
    ngrok http 8080
    ```
 
-   Keep this terminal open. ngrok will print a forwarding address, which is the public address your app should connect to.
+5. **Copy your forwarding address**
+   If you are using ngrok, keep the terminal created in step 4 open. ngrok will print a forwarding address, which is the public address your app should connect to. Copy this address.
+
+   If you are using a paid hosting service, your VM should list a public IP address, copy this IP address
 
 5. **Paste the forwarding address into the app**
    Change the prefix of the forwarding address from **https** to **wss** because we are using a websocket. Open ProgramAT app on your mobile device, go to the server address field in Settings, paste the ngrok forwarding address, and tap **Connect**.
