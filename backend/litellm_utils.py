@@ -10,11 +10,31 @@ from PIL import Image
 
 def resolve_model_name(model_name: str, default_model: str = 'gemini-2.5-flash-lite') -> str:
     """Normalize model names for LiteLLM provider routing."""
-    raw = model_name or default_model
-    if '/' in raw:
+
+    raw = (model_name or default_model).strip()
+
+    # Already fully qualified provider/model
+    known_providers = [
+        'openrouter/',
+        'gemini/',
+        'openai/',
+        'anthropic/',
+        'ollama/',
+        'groq/',
+        'vertex_ai/',
+    ]
+
+    if any(raw.startswith(p) for p in known_providers):
         return raw
+
+    # Gemini shorthand
     if raw.startswith('gemini'):
         return f'gemini/{raw}'
+
+    # Claude shorthand
+    if raw.startswith('claude'):
+        return f'anthropic/{raw}'
+
     return raw
 
 
@@ -28,8 +48,11 @@ def resolve_api_key(model_name: str, explicit_api_key: str = '') -> str:
         return os.environ.get('GEMINI_API_KEY', '')
     if normalized.startswith('claude'):
         return os.environ.get('ANTHROPIC_API_KEY', '')
-    return os.environ.get('OPENAI_API_KEY', '') or os.environ.get('GEMINI_API_KEY', '')
+    if normalized.startswith('openai') or normalized.startswith('gpt'):
+        return os.environ.get('OPENAI_API_KEY', '')
 
+    # Fallback: prefer OPENAI, then GEMINI
+    return os.environ.get('OPENAI_API_KEY', '') or os.environ.get('GEMINI_API_KEY', '')
 
 def extract_text(response) -> str:
     """Extract text content from a LiteLLM response object."""

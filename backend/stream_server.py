@@ -2798,9 +2798,9 @@ Return ONLY a valid JSON object:
 }}"""
 
         response = litellm.completion(
-            model=resolve_model_name(GEMINI_MODEL, default_model='gemini-3-flash-preview'),
+            model=resolve_model_name(LLM_MODEL),
             messages=[{'role': 'user', 'content': prompt}],
-            api_key=resolve_api_key(GEMINI_MODEL, GEMINI_API_KEY),
+            api_key=resolve_api_key(LLM_MODEL),
         )
         ai_response = extract_text(response)
         
@@ -3069,9 +3069,9 @@ Return format:
 }}"""
 
         response = litellm.completion(
-            model=resolve_model_name(GEMINI_MODEL, default_model='gemini-3-flash-preview'),
+            model=resolve_model_name(LLM_MODEL),
             messages=[{'role': 'user', 'content': prompt}],
-            api_key=resolve_api_key(GEMINI_MODEL, GEMINI_API_KEY),
+            api_key=resolve_api_key(LLM_MODEL),
         )
         
         # Parse the AI response
@@ -4899,7 +4899,7 @@ async def handle_client(websocket):
                             # Send the follow-up through LiteLLM using the configured Gemini model
                             try:
                                 response = litellm.completion(
-                                    model=resolve_model_name('gemini-2.5-flash', default_model='gemini-2.5-flash'),
+                                    model=resolve_model_name(LLM_MODEL),
                                     messages=[
                                         {
                                             'role': 'user',
@@ -4909,12 +4909,12 @@ async def handle_client(websocket):
                                             ],
                                         }
                                     ],
-                                    api_key=resolve_api_key('gemini-2.5-flash', GEMINI_API_KEY),
+                                    api_key=resolve_api_key(LLM_MODEL),
                                 )
                                 answer = extract_text(response)
                                 
                                 logger.info(f"FOLLOW-UP: Generated answer length: {len(answer)}")
-                                logger.info(f"FOLLOW-UP: Successfully used LiteLLM with gemini-2.5-flash for image+text")
+                                logger.info(f"FOLLOW-UP: Successfully used LiteLLM with {LLM_MODEL} for image+text")
                                 
                                 await websocket.send(json.dumps({
                                     'type': 'follow_up_response',
