@@ -106,7 +106,7 @@ Once you have achieved three approvals, without any unresolved requested changes
 
 
 ## A Note on Maintainer Availability
-While maintainer involvement is necessary for several types of contributions, outside of dedicated open source events, we cannot make any promises about the timeline under which maintainers' will respond to new feature requests.
+While maintainer involvement is necessary for several types of contributions, outside of dedicated open source events, we cannot make any promises about the timeline under which maintainers' will respond to new feature requests. We set this expectation because our current maintainer team is small, and the number regularly doing development work is even smaller. We are very excited to for the possibilities open-sourcing lends to seeing ProgramAT grow, but at our current scale, it is unrealistic for the maintainer team to be able to guarantee support for high-speed change, at all times, by ourselves.
 
 We will, however, make every effort to respond to requests to be granted org membership in a timely fashion so contributors beyond the maintainer team can begin laying the groundwork for addressing requests from the community (i.e. raising and voting on issues, reviewing PRs, etc.). Further, we will keep a regular eye on community raised issues to prevent ideas that are both compatible with the broader ProgramAT vision and highly valued by the community from being unduly blocked by needing a maintainer's go ahead to raise a PR.
 
